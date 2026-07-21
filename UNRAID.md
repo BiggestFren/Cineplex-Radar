@@ -2,12 +2,23 @@
 
 Repository: `https://github.com/BiggestFren/Cineplex-Radar`
 
-Unraid does not include Docker Compose natively. The easiest Git-based installation
-is **Dockhand** from Community Applications because it can deploy a stack directly
-from a Git repository. **Compose Manager Plus** also works, but requires pasting the
-Compose and environment files into its stack editor.
+Unraid does not include Docker Compose natively. If Portainer is already installed,
+use its Git-backed Stacks feature. Dockhand and Compose Manager Plus are alternatives,
+not requirements.
 
-## Option A: Dockhand Git deployment
+## Option A: Portainer Git stack
+
+1. Open Portainer and select the local Docker environment.
+2. Select **Stacks**, **Add stack**, then **Git repository**.
+3. Use stack name `cineplex-radar` and repository URL
+   `https://github.com/BiggestFren/Cineplex-Radar` with authentication disabled.
+4. Use repository reference `refs/heads/main` and Compose path
+   `compose.unraid.yaml`.
+5. In **Environment variables**, add the four required values listed below.
+6. Click **Deploy the stack**. Radar opens on `http://<unraid-ip>:8000/health`;
+   ntfy opens on `http://<unraid-ip>:8080`.
+
+## Option B: Dockhand Git deployment
 
 1. In Unraid **Apps**, install **Dockhand**.
 2. In Dockhand, create a stack from this Git repository:
@@ -18,7 +29,7 @@ Compose and environment files into its stack editor.
 5. Deploy the stack. Radar opens on `http://<unraid-ip>:8000/health`; ntfy opens
    on `http://<unraid-ip>:8080`.
 
-## Option B: Compose Manager Plus
+## Option C: Compose Manager Plus
 
 1. In Unraid **Apps**, install **Compose Manager Plus**.
 2. Add a stack named `cineplex-radar`.

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+from datetime import datetime
 from typing import Any, Protocol
 
 import httpx
@@ -10,15 +12,51 @@ from .config import Settings
 from .models import RadarCreate
 
 
-SYSTEM_PROMPT = """You parse movie radar requests for one Toronto user.
-Return JSON only. Never invent Cineplex IDs. Schema:
+SYSTEM_PROMPT = """Extract one movie watch request for a Toronto user. Return JSON only.
+Never invent Cineplex IDs. The only required user details are the movie identity and
+party size. Words such as people, tickets, and seats all describe party_size. Theatre,
+format, date, and time preferences are optional and must never trigger clarification.
+Use empty arrays or the defaults below when an optional preference is not supplied.
+
+Exact response schema:
 {"status":"complete|clarify","question":string|null,"radar":object|null}
-radar fields: movie_query, movie_id(null), preferred_theatre_ids([]),
-preferred_theatre_names, format_preference, preferred_dates, time_start,
-time_end, first_day_bonus, party_size, armed_mode.
-Use armed_mode=notify_only unless the user explicitly asks for assisted buying.
-If movie identity, party size, or an essential preference is ambiguous, clarify.
+
+For a complete request, radar must be:
+{"movie_query":string,"movie_id":null,"preferred_theatre_ids":[],
+"preferred_theatre_names":string[],"format_preference":string[],
+"preferred_dates":string[],"time_start":"HH:MM"|null,
+"time_end":"HH:MM"|null,"first_day_bonus":boolean,"party_size":integer,
+"armed_mode":"notify_only|assisted_buy"}
+
+Use armed_mode="notify_only" unless the user explicitly requests assisted buying.
+Use first_day_bonus=true unless the user says otherwise. Only clarify when the movie
+identity or party size is genuinely absent or ambiguous. Do not ask again for a value
+already stated by the user.
 """
+
+REPAIR_PROMPT = """Re-check the user's original request and correct the previous JSON.
+Do not ask for information the user already supplied. In particular, convert people,
+tickets, or seats to an integer party_size and preserve the stated movie title. Return
+the exact JSON schema from the system instruction, using defaults for optional fields.
+"""
+
+_LIST_FIELDS = {
+    "preferred_theatre_ids",
+    "preferred_theatre_names",
+    "format_preference",
+    "preferred_dates",
+}
+
+_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+}
 
 
 class SupportsCompletion(Protocol):
@@ -56,6 +94,70 @@ class LLMClient:
         return parsed
 
 
+def _normalise_time(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    cleaned = value.strip().upper().replace(".", "")
+    for pattern in ("%H:%M", "%I:%M %p", "%I %p"):
+        try:
+            return datetime.strptime(cleaned, pattern).strftime("%H:%M")
+        except ValueError:
+            continue
+    return value
+
+
+def _normalise_party_size(value: Any) -> Any:
+    if isinstance(value, str):
+        cleaned = value.strip().casefold()
+        if cleaned in _NUMBER_WORDS:
+            return _NUMBER_WORDS[cleaned]
+        match = re.search(r"\b([1-8])\b", cleaned)
+        if match:
+            return int(match.group(1))
+    return value
+
+
+def _normalise_radar_payload(payload: Any) -> Any:
+    if not isinstance(payload, dict):
+        return payload
+
+    # OpenAI-compatible models commonly emit null for unspecified optional fields.
+    # Dropping those values lets RadarCreate apply its safe defaults.
+    normalised = {
+        key: value
+        for key, value in payload.items()
+        if value is not None or key == "movie_id"
+    }
+    for field in _LIST_FIELDS:
+        value = normalised.get(field)
+        if isinstance(value, str):
+            normalised[field] = [value] if value.strip() else []
+
+    normalised["party_size"] = _normalise_party_size(normalised.get("party_size"))
+    for field in ("time_start", "time_end"):
+        if field in normalised:
+            normalised[field] = _normalise_time(normalised[field])
+
+    mode = normalised.get("armed_mode")
+    if isinstance(mode, str):
+        safe_mode = mode.strip().casefold().replace("-", "_").replace(" ", "_")
+        if safe_mode in {"notify", "notification", "notify_me", "notify_only"}:
+            normalised["armed_mode"] = "notify_only"
+        elif safe_mode in {"assist", "assisted", "assisted_buy", "assisted_buying"}:
+            normalised["armed_mode"] = "assisted_buy"
+
+    return normalised
+
+
+def _validate_result(result: dict[str, Any]) -> RadarCreate | None:
+    if result.get("status") == "clarify" or not result.get("radar"):
+        return None
+    try:
+        return RadarCreate.model_validate(_normalise_radar_payload(result["radar"]))
+    except ValidationError:
+        return None
+
+
 async def parse_radar_request(client: SupportsCompletion, text: str) -> tuple[RadarCreate | None, str | None]:
     try:
         result = await client.complete_json(
@@ -66,13 +168,39 @@ async def parse_radar_request(client: SupportsCompletion, text: str) -> tuple[Ra
         )
     except (ValueError, json.JSONDecodeError, KeyError, TypeError):
         return None, "I couldn't safely parse that. Which movie, party size, and theatre or area should I watch?"
-    if result.get("status") == "clarify" or not result.get("radar"):
-        question = result.get("question")
-        return None, str(question or "Could you clarify the movie and your key preferences?")
+
+    draft = _validate_result(result)
+    if draft is not None:
+        return draft, None
+
+    # Some smaller OpenAI-compatible models ignore values that are plainly present
+    # in a full request. Give the model one constrained correction attempt before
+    # showing a clarification to the user.
     try:
-        return RadarCreate.model_validate(result["radar"]), None
-    except ValidationError:
-        return None, "I need a little more detail before creating this watch. What movie and party size?"
+        repaired = await client.complete_json(
+            [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "instruction": REPAIR_PROMPT,
+                            "original_request": text,
+                            "previous_response": result,
+                        }
+                    ),
+                },
+            ]
+        )
+    except (ValueError, json.JSONDecodeError, KeyError, TypeError):
+        repaired = {}
+
+    draft = _validate_result(repaired)
+    if draft is not None:
+        return draft, None
+
+    question = repaired.get("question") or result.get("question")
+    return None, str(question or "Which movie should I watch, and how many people need seats?")
 
 
 async def rank_suggestions(
@@ -108,4 +236,3 @@ async def tie_break_commentary(
         ]
     )
     return str(result.get("reason")) if result.get("reason") else None
-

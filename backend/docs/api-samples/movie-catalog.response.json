@@ -1,0 +1,9 @@
+{
+  "items": [
+    {"id":37617,"releaseDate":"2026-07-17T00:00:00","name":"The Odyssey","runtimeInMinutes":172,"filmUrl":"the-odyssey","language":"English","genres":["Action"],"hasShowtimes":true,"isNowPlaying":true,"isComingSoon":false,"isEvent":false},
+    {"id":38453,"releaseDate":"2026-07-01T00:00:00","name":"Minions & Monsters","runtimeInMinutes":90,"filmUrl":"minions-monsters","language":"English","genres":["Animation","Family"],"hasShowtimes":true,"isNowPlaying":true,"isComingSoon":false,"isEvent":false},
+    {"id":36558,"releaseDate":"2026-06-19T00:00:00","name":"Toy Story 5","runtimeInMinutes":102,"filmUrl":"toy-story-5","language":"English","genres":["Animation","Comedy","Family"],"hasShowtimes":true,"isNowPlaying":true,"isComingSoon":false,"isEvent":false}
+  ],
+  "totalCount": 244
+}
+

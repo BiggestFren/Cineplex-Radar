@@ -1,0 +1,29 @@
+{
+  "seats": [
+    {"id":"F5","label":"F5","row":5,"column":5,"type":"Standard","available":true},
+    {"id":"F6","label":"F6","row":5,"column":6,"type":"Standard","available":true},
+    {"id":"F7","label":"F7","row":5,"column":7,"type":"Standard","available":true},
+    {"id":"F8","label":"F8","row":5,"column":8,"type":"Standard","available":true},
+    {"id":"G5","label":"G5","row":6,"column":5,"type":"Standard","available":true},
+    {"id":"G6","label":"G6","row":6,"column":6,"type":"Standard","available":true},
+    {"id":"G7","label":"G7","row":6,"column":7,"type":"Standard","available":false},
+    {"id":"G8","label":"G8","row":6,"column":8,"type":"Standard","available":false},
+    {"id":"G9","label":"G9","row":6,"column":9,"type":"Standard","available":false},
+    {"id":"G10","label":"G10","row":6,"column":10,"type":"Standard","available":false},
+    {"id":"G11","label":"G11","row":6,"column":11,"type":"Standard","available":true},
+    {"id":"G12","label":"G12","row":6,"column":12,"type":"Standard","available":true},
+    {"id":"H6","label":"H6","row":7,"column":6,"type":"Standard","available":true},
+    {"id":"H7","label":"H7","row":7,"column":7,"type":"Standard","available":true},
+    {"id":"H8","label":"H8","row":7,"column":8,"type":"Wheelchair","available":true},
+    {"id":"H9","label":"H9","row":7,"column":9,"type":"WheelchairCompanion","available":true},
+    {"id":"H10","label":"H10","row":7,"column":10,"type":"Standard","available":true},
+    {"id":"H11","label":"H11","row":7,"column":11,"type":"Standard","available":true},
+    {"id":"I6","label":"I6","row":8,"column":6,"type":"Standard","available":true},
+    {"id":"I7","label":"I7","row":8,"column":7,"type":"Standard","available":true},
+    {"id":"I8","label":"I8","row":8,"column":8,"type":"Standard","available":true},
+    {"id":"I9","label":"I9","row":8,"column":9,"type":"Standard","available":true},
+    {"id":"I10","label":"I10","row":8,"column":10,"type":"Standard","available":true},
+    {"id":"I11","label":"I11","row":8,"column":11,"type":"Standard","available":true}
+  ]
+}
+

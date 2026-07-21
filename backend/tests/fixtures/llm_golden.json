@@ -1,0 +1,40 @@
+[
+  {
+    "input": "watch for the new Villeneuve movie, IMAX only, any Friday evening, two seats",
+    "response": {
+      "status": "complete",
+      "question": null,
+      "radar": {
+        "movie_query": "new Villeneuve movie",
+        "movie_id": null,
+        "preferred_theatre_ids": [],
+        "preferred_theatre_names": [],
+        "format_preference": ["IMAX"],
+        "preferred_dates": [],
+        "time_start": "17:00",
+        "time_end": "23:00",
+        "first_day_bonus": false,
+        "party_size": 2,
+        "armed_mode": "notify_only"
+      }
+    },
+    "expected": {
+      "movie_query": "new Villeneuve movie",
+      "movie_id": null,
+      "preferred_theatre_ids": [],
+      "preferred_theatre_names": [],
+      "format_preference": ["IMAX"],
+      "preferred_dates": [],
+      "time_start": "17:00",
+      "time_end": "23:00",
+      "first_day_bonus": false,
+      "party_size": 2,
+      "armed_mode": "notify_only"
+    }
+  },
+  {
+    "input": "watch Dune",
+    "response": {"status":"clarify","question":"Which Dune movie and how many seats?","radar":null}
+  }
+]
+

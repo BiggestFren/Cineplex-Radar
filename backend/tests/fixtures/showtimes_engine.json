@@ -1,0 +1,7 @@
+[
+  {"id":"ultraavx","experienceTypes":["UltraAVX","Laser Projection"],"theatre":"Queensway","showStartDateTime":"2026-08-14T19:00:00","isSoldOut":false,"isShowtimeEnabledOnline":true,"seatsRemaining":90},
+  {"id":"digital-imax","experienceTypes":["IMAX"],"theatre":"Yonge-Dundas","showStartDateTime":"2026-08-14T19:15:00","isSoldOut":false,"isShowtimeEnabledOnline":true,"seatsRemaining":80},
+  {"id":"imax-laser","experienceTypes":["IMAX","Laser Projection"],"theatre":"Scotiabank Theatre Toronto","showStartDateTime":"2026-08-14T19:30:00","isSoldOut":false,"isShowtimeEnabledOnline":true,"seatsRemaining":120},
+  {"id":"sold-out","experienceTypes":["IMAX","Laser Projection"],"theatre":"Scotiabank Theatre Toronto","showStartDateTime":"2026-08-14T20:00:00","isSoldOut":true,"isShowtimeEnabledOnline":true,"seatsRemaining":0}
+]
+

@@ -1,0 +1,2 @@
+{"method":"GET","url":"https://apis.cineplex.com/prod/ticketing/api/v1/theatre/7402/showtime/449273/seat-availability","query":{"preview":"true"},"headers":{"Ocp-Apim-Subscription-Key":"<redacted-public-web-key>","Referer":"https://www.cineplex.com/en-Mobile/ticketing/preview?theatreId=7402&showtimeId=449273&dbox=True"},"status":200}
+

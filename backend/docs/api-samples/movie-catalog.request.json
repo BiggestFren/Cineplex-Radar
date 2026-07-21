@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "https://apis.cineplex.com/prod/cpx/theatrical/api/v1/movies",
+  "query": {"language":"en","skip":0,"take":3,"filterEvents":"false","removeIrrelevantFilms":"false","onePosterExcluded":"false"},
+  "headers": {"Ocp-Apim-Subscription-Key":"<redacted-public-web-key>","Referer":"https://www.cineplex.com/movie/the-odyssey","User-Agent":"<browser-like>"},
+  "status": 200
+}
+

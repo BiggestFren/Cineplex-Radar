@@ -1,0 +1,43 @@
+services:
+  radar:
+    image: ${RADAR_IMAGE:-ghcr.io/biggestfren/cineplex-radar:latest}
+    build:
+      context: ./backend
+    pull_policy: missing
+    container_name: cineplex-radar
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_PATH: /state/radar.db
+      NTFY_BASE_URL: http://ntfy:80
+    volumes:
+      - ${APPDATA_ROOT:-./data}/radar:/state
+    ports:
+      - "8000:8000"
+    depends_on:
+      ntfy:
+        condition: service_started
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    restart: unless-stopped
+    container_name: cineplex-radar-ntfy
+    command: serve
+    environment:
+      NTFY_BASE_URL: ${PUBLIC_NTFY_BASE_URL:-http://localhost:8080}
+      NTFY_BEHIND_PROXY: "true"
+      NTFY_CACHE_FILE: /var/cache/ntfy/cache.db
+      NTFY_AUTH_FILE: /var/lib/ntfy/user.db
+      NTFY_AUTH_DEFAULT_ACCESS: ${NTFY_AUTH_DEFAULT_ACCESS:-read-write}
+    volumes:
+      - ${APPDATA_ROOT:-./data}/ntfy-cache:/var/cache/ntfy
+      - ${APPDATA_ROOT:-./data}/ntfy-data:/var/lib/ntfy
+    ports:
+      - "8080:80"
+    security_opt:
+      - no-new-privileges:true

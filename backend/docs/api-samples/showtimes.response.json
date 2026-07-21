@@ -1,0 +1,27 @@
+[
+  {
+    "theatre":"Scotiabank Theatre Toronto",
+    "theatreId":7402,
+    "dates":[{"startDate":"2026-07-21T00:00:00","movies":[{
+      "id":37617,
+      "name":"The Odyssey",
+      "filmUrl":"the-odyssey",
+      "experiences":[{
+        "experienceTypes":["UltraAVX","D-BOX","Laser Projection"],
+        "sessions":[{
+          "seatMapUrl":"https://www.cineplex.com/en-Mobile/ticketing/preview?theatreId=7402&showtimeId=449273&dbox=True",
+          "ticketingUrl":"https://apis.cineplex.com/prod/ticketing/api/v1/routing/redirect-to-ticketing?VistaSessionId=449273&VISTAHOCategoryCode=0000000004&LocationId=7402&IsSeriesShowtime=False",
+          "vistaSessionId":449273,
+          "areaCode":"0000000004",
+          "showStartDateTime":"2026-07-21T18:00:00",
+          "isReservedSeating":true,
+          "isShowtimeEnabledOnline":true,
+          "isSoldOut":false
+        }]
+      }],
+      "language":"English",
+      "passesAllowed":false
+    }]}]
+  }
+]
+

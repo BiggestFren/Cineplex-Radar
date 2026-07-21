@@ -1,0 +1,11 @@
+{
+  "totalRows":22,"totalColumns":32,"maxSeatSelectionAllowed":18,
+  "standardSeats":{"left":0.0,"top":0.0,"areaWidth":32,"columnCount":32,"columnWidth":1,"rowCount":22,"rows":[
+    {"number":0,"physicalNumber":22,"label":"AA","seats":[{"id":"1_22_28","column":4,"columnPhysicalNumber":28,"label":"AA1","seatGroupIds":[],"type":"Standard"},{"id":"1_22_27","column":5,"columnPhysicalNumber":27,"label":"AA2","seatGroupIds":[],"type":"Standard"}]},
+    {"number":4,"physicalNumber":18,"label":"A","seats":[{"id":"1_18_25","column":7,"columnPhysicalNumber":25,"label":"A8","seatGroupIds":[],"type":"Standard"},{"id":"1_18_24","column":8,"columnPhysicalNumber":24,"label":"AW","seatGroupIds":[],"type":"Wheelchair"}]}
+  ]},
+  "dboxSeats":{"left":6.0,"top":18.0,"areaWidth":20.0,"columnCount":16,"columnWidth":1.25,"rowCount":2,"rows":[]},
+  "balconySeats":{"left":0,"top":0,"areaWidth":0,"columnCount":0,"columnWidth":0,"rowCount":0,"rows":[]},
+  "seatLegendTypes":["Standard","Wheelchair","Dbox"]
+}
+

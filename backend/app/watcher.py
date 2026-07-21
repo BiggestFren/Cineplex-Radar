@@ -14,6 +14,7 @@ from .executor import BookingExecutor
 from .llm import SupportsCompletion, tie_break_commentary
 from .models import RadarItem
 from .notifications import Notifier
+from .theatres import toronto_theatre_names
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +26,22 @@ def _matches_movie(item: RadarItem, movie: dict[str, Any]) -> bool:
     return query in str(movie.get("name", "")).casefold() or query == str(movie.get("filmUrl", "")).casefold()
 
 
-def _matches_theatre(item: RadarItem, showtime: dict[str, Any]) -> bool:
+def _matches_theatre(
+    item: RadarItem,
+    showtime: dict[str, Any],
+    enabled_theatre_names: list[str] | None = None,
+) -> bool:
+    name = str(showtime.get("theatre", "")).casefold()
+    if not name:
+        return False
+    if enabled_theatre_names is not None:
+        enabled = [selected.casefold() for selected in enabled_theatre_names]
+        if not any(selected in name or name in selected for selected in enabled):
+            return False
     if not item.preferred_theatre_ids and not item.preferred_theatre_names:
         return True
     if int(showtime.get("theatreId", -1)) in item.preferred_theatre_ids:
         return True
-    name = str(showtime.get("theatre", "")).casefold()
     return any(fragment.casefold() in name for fragment in item.preferred_theatre_names)
 
 
@@ -68,6 +79,7 @@ class Watcher:
         radar_items = self.database.list_radar()
         if not radar_items:
             return 0
+        enabled_theatres = self.database.get_enabled_theatre_names(toronto_theatre_names())
         catalog = await self.cineplex.movie_catalog()
         detections = 0
         for radar in radar_items:
@@ -87,7 +99,11 @@ class Watcher:
                 for date_value in dates[:3]:
                     payload = await self.cineplex.showtimes(film_id, date_value)
                     all_showtimes.extend(flatten_showtimes(payload))
-                relevant = [show for show in all_showtimes if _matches_theatre(radar, show)]
+                relevant = [
+                    show
+                    for show in all_showtimes
+                    if _matches_theatre(radar, show, enabled_theatres)
+                ]
                 new_relevant: list[dict[str, Any]] = []
                 for showtime in relevant:
                     day = str(showtime.get("date") or showtime.get("showStartDateTime", ""))[:10]

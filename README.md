@@ -16,6 +16,8 @@ disabled until those flows are captured and redacted from a real logged-in sessi
 - Bearer-authenticated API plus public `/health` and generated OpenAPI docs at `/docs`.
 - Kotlin/Jetpack Compose Android app (min SDK 26): Feed, Radar editor, Chat, Settings,
   error states, deep links, and high-priority UnifiedPush notifications.
+- Server-backed Settings theatre selector with all current Toronto Cineplex locations;
+  global on/off choices persist in SQLite and filter every watch.
 - Daily TMDB discovery and nano-gpt/OpenAI-compatible strict-JSON LLM client.
 - Pure showtime/seat ranking with accessibility exclusions and offline fixtures.
 - Docker Compose deployment for Radar and ntfy, suitable for Unraid and Cloudflare Tunnel.
@@ -97,6 +99,7 @@ signing configuration with a private release keystore before distributing it.
 Authenticated unless noted:
 
 - `GET /health` (public)
+- `GET /settings/theatres` and `PUT /settings/theatres` (bearer-authenticated)
 - `GET|POST /radar`, `PATCH|DELETE /radar/{id}`
 - `GET /events?since=`, `GET /suggestions`
 - `POST /suggestions/{id}/accept`, `POST /suggestions/{id}/decline`

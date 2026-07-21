@@ -38,6 +38,21 @@ def test_api_contract_and_auth(settings):
         assert client.get("/health").status_code == 200
         assert client.get("/radar").status_code == 401
 
+        theatres = client.get("/settings/theatres", headers=headers)
+        assert theatres.status_code == 200
+        assert len(theatres.json()) == 12
+        assert all(item["enabled"] for item in theatres.json())
+        selected_name = "Scotiabank Theatre Toronto"
+        updated_theatres = client.put(
+            "/settings/theatres", headers=headers, json={"enabled_names": [selected_name]}
+        )
+        assert updated_theatres.status_code == 200
+        assert [item["name"] for item in updated_theatres.json() if item["enabled"]] == [selected_name]
+        invalid_theatre = client.put(
+            "/settings/theatres", headers=headers, json={"enabled_names": ["Made Up Cinema"]}
+        )
+        assert invalid_theatre.status_code == 422
+
         create = client.post("/radar", headers=headers, json={"movie_query": "The Odyssey", "party_size": 2})
         assert create.status_code == 201
         radar_id = create.json()["id"]

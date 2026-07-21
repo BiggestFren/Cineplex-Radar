@@ -24,8 +24,11 @@ from .models import (
     RadarUpdate,
     PushRegistration,
     Suggestion,
+    TheatrePreference,
+    TheatrePreferencesUpdate,
 )
 from .notifications import Notifier
+from .theatres import TORONTO_THEATRES, toronto_theatre_names
 from .watcher import Watcher
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -93,7 +96,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Radar API",
-        version="0.1.0",
+        version="0.2.0",
         description="Personal Cineplex pre-order watcher and human-approved booking assistant.",
         lifespan=lifespan,
     )
@@ -121,6 +124,47 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/radar", response_model=list[RadarItem], tags=["radar"])
     async def list_radar(auth: Annotated[None, Depends(require_auth)], request: Request) -> list[RadarItem]:
         return request.app.state.database.list_radar()
+
+    def theatre_preferences(request: Request) -> list[TheatrePreference]:
+        enabled = {
+            name.casefold()
+            for name in request.app.state.database.get_enabled_theatre_names(
+                toronto_theatre_names()
+            )
+        }
+        return [
+            TheatrePreference(**item, enabled=item["name"].casefold() in enabled)
+            for item in TORONTO_THEATRES
+        ]
+
+    @app.get(
+        "/settings/theatres",
+        response_model=list[TheatrePreference],
+        tags=["settings"],
+    )
+    async def list_theatre_preferences(
+        auth: Annotated[None, Depends(require_auth)], request: Request
+    ) -> list[TheatrePreference]:
+        return theatre_preferences(request)
+
+    @app.put(
+        "/settings/theatres",
+        response_model=list[TheatrePreference],
+        tags=["settings"],
+    )
+    async def update_theatre_preferences(
+        auth: Annotated[None, Depends(require_auth)],
+        request: Request,
+        update: TheatrePreferencesUpdate,
+    ) -> list[TheatrePreference]:
+        canonical = {item["name"].casefold(): item["name"] for item in TORONTO_THEATRES}
+        unknown = [name for name in update.enabled_names if name.casefold() not in canonical]
+        if unknown:
+            raise HTTPException(status_code=422, detail=f"Unknown Toronto theatre: {unknown[0]}")
+        requested = {name.casefold() for name in update.enabled_names}
+        ordered = [item["name"] for item in TORONTO_THEATRES if item["name"].casefold() in requested]
+        request.app.state.database.set_enabled_theatre_names(ordered)
+        return theatre_preferences(request)
 
     @app.post("/radar", response_model=RadarItem, status_code=201, tags=["radar"])
     async def create_radar(auth: Annotated[None, Depends(require_auth)], request: Request, item: RadarCreate) -> RadarItem:

@@ -84,3 +84,18 @@ async def test_repeat_polls_are_deduplicated(settings):
     assert len(database.list_events()) == 4  # plus one plan-ready event
     assert len(notifier.sent) == 4
     database.close()
+
+
+async def test_global_theatre_toggle_excludes_disabled_locations(settings):
+    database = Database(settings.database_path)
+    database.create_radar(RadarCreate(movie_query="Dune: Messiah"))
+    database.set_enabled_theatre_names([])
+    notifier = FakeNotifier()
+    watcher = Watcher(settings, database, FakeCineplex(), notifier)
+
+    detections = await watcher.poll_once()
+
+    assert detections == 1  # catalog only; the theatre and its showtimes are disabled
+    assert [event.type for event in database.list_events()] == ["catalog"]
+    assert len(notifier.sent) == 1
+    database.close()

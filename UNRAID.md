@@ -13,8 +13,8 @@ Compose and environment files into its stack editor.
 2. In Dockhand, create a stack from this Git repository:
    `https://github.com/BiggestFren/Cineplex-Radar`
 3. Select branch `main` and Compose file `compose.unraid.yaml`.
-4. Copy `.env.unraid.example` to `.env` in the stack and fill every
-   `replace-*` value. Use a long random `APP_AUTH_TOKEN`.
+4. In the Git stack's environment-variable panel, add the four required values
+   listed below. Dockhand injects them without committing them to GitHub.
 5. Deploy the stack. Radar opens on `http://<unraid-ip>:8000/health`; ntfy opens
    on `http://<unraid-ip>:8080`.
 
@@ -23,8 +23,7 @@ Compose and environment files into its stack editor.
 1. In Unraid **Apps**, install **Compose Manager Plus**.
 2. Add a stack named `cineplex-radar`.
 3. Paste `compose.unraid.yaml` into its Compose editor.
-4. Paste `.env.unraid.example` into its Env editor, rename it to `.env`, and
-   fill every `replace-*` value.
+4. Paste `.env.unraid.example` into its Env editor and fill every `replace-*` value.
 5. Choose **Compose Up**. If the GHCR image is not yet available, the stack uses
    the public GitHub repository as its source-build fallback.
 

@@ -7,10 +7,34 @@ services:
     pull_policy: missing
     container_name: cineplex-radar
     restart: unless-stopped
-    env_file: .env
     environment:
+      APP_AUTH_TOKEN: ${APP_AUTH_TOKEN:?Set a long random APP_AUTH_TOKEN}
       DATABASE_PATH: /state/radar.db
+      ENABLE_WATCHER: ${ENABLE_WATCHER:-true}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-300}
+      POLL_JITTER_SECONDS: ${POLL_JITTER_SECONDS:-45}
+      BURST_MODE: ${BURST_MODE:-false}
+      BURST_INTERVAL_SECONDS: ${BURST_INTERVAL_SECONDS:-45}
+      BURST_UNTIL: ${BURST_UNTIL:-}
+      CINEPLEX_BASE_URL: ${CINEPLEX_BASE_URL:-https://apis.cineplex.com/prod/cpx/theatrical/api}
+      CINEPLEX_TICKETING_BASE_URL: ${CINEPLEX_TICKETING_BASE_URL:-https://apis.cineplex.com/prod/ticketing/api}
+      CINEPLEX_SUBSCRIPTION_KEY: ${CINEPLEX_SUBSCRIPTION_KEY:?Set the current public Cineplex subscription key}
+      CINEPLEX_USER_AGENT: ${CINEPLEX_USER_AGENT:-Mozilla/5.0 Radar/0.1}
+      CINEPLEX_REFERER: https://www.cineplex.com/
+      ENABLE_CINEPLEX_ACCOUNT: "false"
+      ENABLE_CHECKOUT: "false"
+      ALLOW_UNATTENDED_BUY: "false"
       NTFY_BASE_URL: http://ntfy:80
+      NTFY_TOPIC: ${NTFY_TOPIC:?Set a long private NTFY_TOPIC}
+      NTFY_TOKEN: ${NTFY_TOKEN:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+      TMDB_REGION: ${TMDB_REGION:-CA}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://nano-gpt.com/api/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      HOME_LATITUDE: ${HOME_LATITUDE:-43.6532}
+      HOME_LONGITUDE: ${HOME_LONGITUDE:--79.3832}
     volumes:
       - ${APPDATA_ROOT:-/mnt/user/appdata/cineplex-radar}/radar:/state
     ports:
@@ -30,7 +54,7 @@ services:
     restart: unless-stopped
     command: serve
     environment:
-      NTFY_BASE_URL: ${PUBLIC_NTFY_BASE_URL}
+      NTFY_BASE_URL: ${PUBLIC_NTFY_BASE_URL:?Set the public HTTPS ntfy URL}
       NTFY_BEHIND_PROXY: "true"
       NTFY_CACHE_FILE: /var/cache/ntfy/cache.db
       NTFY_AUTH_FILE: /var/lib/ntfy/user.db

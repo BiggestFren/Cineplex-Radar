@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "radar-cineplex"
-version = "0.1.0"
+version = "0.2.0"
 description = "Self-hosted Cineplex pre-order watcher and assisted-buy API"
 requires-python = ">=3.12"
 dependencies = [
@@ -25,4 +25,3 @@ packages = ["app"]
 addopts = "-q"
 asyncio_mode = "auto"
 testpaths = ["tests"]
-

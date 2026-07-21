@@ -34,6 +34,23 @@ class RadarApiTest {
         assertEquals(401, (failure as RadarApiException).status)
     }
 
+    @Test fun loadsAndUpdatesTheatrePreferences() = runTest {
+        val response = """[{"name":"Scotiabank Theatre Toronto","address":"259 Richmond Street West","city":"Toronto","province":"ON","slug":"scotiabank-theatre-toronto","enabled":true}]"""
+        server.enqueue(MockResponse().setBody(response).setHeader("Content-Type", "application/json"))
+        server.enqueue(MockResponse().setBody(response).setHeader("Content-Type", "application/json"))
+        val api = RadarApi({ ConnectionSettings(server.url("/").toString(), "secret", "topic") })
+
+        val theatres = api.theatrePreferences()
+        val updated = api.updateTheatrePreferences(listOf("Scotiabank Theatre Toronto"))
+
+        assertTrue(theatres.single().enabled)
+        assertEquals(theatres, updated)
+        assertEquals("/settings/theatres", server.takeRequest().path)
+        val updateRequest = server.takeRequest()
+        assertEquals("PUT", updateRequest.method)
+        assertTrue(updateRequest.body.readUtf8().contains("Scotiabank Theatre Toronto"))
+    }
+
     @Test fun rejectsMissingConfigurationWithoutNetwork() = runTest {
         val api = RadarApi({ ConnectionSettings() })
         val failure = runCatching { api.radar() }.exceptionOrNull()

@@ -93,8 +93,37 @@ class Database:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS preferences (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
                 """
             )
+
+    def get_enabled_theatre_names(self, default_names: Iterable[str]) -> list[str]:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT value FROM preferences WHERE key='enabled_theatre_names'"
+            ).fetchone()
+        if row is None:
+            return list(default_names)
+        try:
+            value = json.loads(row["value"])
+        except (TypeError, json.JSONDecodeError):
+            return list(default_names)
+        return [str(name) for name in value] if isinstance(value, list) else list(default_names)
+
+    def set_enabled_theatre_names(self, names: Iterable[str]) -> list[str]:
+        value = list(dict.fromkeys(str(name) for name in names))
+        now = _now()
+        with self._lock, self._connection:
+            self._connection.execute(
+                """INSERT INTO preferences(key,value,updated_at) VALUES('enabled_theatre_names',?,?)
+                   ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at""",
+                (json.dumps(value), now),
+            )
+        return value
 
     def register_push_endpoint(self, endpoint: str) -> None:
         now = _now()

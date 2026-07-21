@@ -34,6 +34,7 @@ class RadarApi(
                 .header("Accept", "application/json")
             when (method) {
                 "POST" -> builder.post((body ?: "{}").toRequestBody(mediaType))
+                "PUT" -> builder.put((body ?: "{}").toRequestBody(mediaType))
                 "PATCH" -> builder.patch((body ?: "{}").toRequestBody(mediaType))
                 "DELETE" -> builder.delete()
             }
@@ -50,6 +51,17 @@ class RadarApi(
     suspend fun radar(): List<RadarItem> = json.decodeFromString(request("/radar"))
     suspend fun events(): List<EventItem> = json.decodeFromString(request("/events"))
     suspend fun suggestions(): List<Suggestion> = json.decodeFromString(request("/suggestions?suggestion_status=pending"))
+    suspend fun theatrePreferences(): List<TheatrePreference> =
+        json.decodeFromString(request("/settings/theatres"))
+
+    suspend fun updateTheatrePreferences(enabledNames: List<String>): List<TheatrePreference> {
+        val body = buildJsonObject {
+            putJsonArray("enabled_names") {
+                enabledNames.forEach { add(kotlinx.serialization.json.JsonPrimitive(it)) }
+            }
+        }
+        return json.decodeFromString(request("/settings/theatres", "PUT", body.toString()))
+    }
 
     suspend fun updateRadar(
         id: Int,

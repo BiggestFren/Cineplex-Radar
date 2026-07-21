@@ -116,6 +116,19 @@ class ChatResponse(BaseModel):
     draft: RadarCreate | None = None
 
 
+class TheatrePreference(BaseModel):
+    name: str
+    address: str
+    city: str = "Toronto"
+    province: str = "ON"
+    slug: str
+    enabled: bool = True
+
+
+class TheatrePreferencesUpdate(BaseModel):
+    enabled_names: list[str] = Field(default_factory=list)
+
+
 class Health(BaseModel):
     status: str = "ok"
     database: str = "ok"

@@ -10,6 +10,7 @@ import ca.radar.cineplex.data.EventItem
 import ca.radar.cineplex.data.RadarApi
 import ca.radar.cineplex.data.RadarItem
 import ca.radar.cineplex.data.Suggestion
+import ca.radar.cineplex.data.TheatrePreference
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ data class RadarUiState(
     val radar: List<RadarItem> = emptyList(),
     val events: List<EventItem> = emptyList(),
     val suggestions: List<Suggestion> = emptyList(),
+    val theatrePreferences: List<TheatrePreference> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
     val message: String? = null,
@@ -44,9 +46,18 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
             val radar = async { api.radar() }
             val events = async { api.events() }
             val suggestions = async { api.suggestions() }
-            Triple(radar.await(), events.await(), suggestions.await())
-        }.onSuccess { (radar, events, suggestions) ->
-            _state.update { it.copy(radar = radar, events = events, suggestions = suggestions, loading = false) }
+            val theatres = async { api.theatrePreferences() }
+            RadarRefresh(radar.await(), events.await(), suggestions.await(), theatres.await())
+        }.onSuccess { result ->
+            _state.update {
+                it.copy(
+                    radar = result.radar,
+                    events = result.events,
+                    suggestions = result.suggestions,
+                    theatrePreferences = result.theatres,
+                    loading = false,
+                )
+            }
         }.onFailure { failure ->
             _state.update { it.copy(loading = false, error = failure.message ?: "Connection failed") }
         }
@@ -56,6 +67,23 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
         store.save(value)
         _state.update { it.copy(settings = store.load(), message = "Settings saved", error = null) }
         refresh()
+    }
+
+    fun saveTheatrePreferences(enabledNames: List<String>) = viewModelScope.launch {
+        _state.update { it.copy(loading = true, error = null) }
+        runCatching { api.updateTheatrePreferences(enabledNames) }
+            .onSuccess { theatres ->
+                _state.update {
+                    it.copy(
+                        theatrePreferences = theatres,
+                        loading = false,
+                        message = "Theatre watch list saved",
+                    )
+                }
+            }
+            .onFailure { failure ->
+                _state.update { it.copy(loading = false, error = failure.message) }
+            }
     }
 
     fun updateRadar(
@@ -110,3 +138,10 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
             .onFailure { failure -> _state.update { it.copy(loading = false, error = failure.message) } }
     }
 }
+
+private data class RadarRefresh(
+    val radar: List<RadarItem>,
+    val events: List<EventItem>,
+    val suggestions: List<Suggestion>,
+    val theatres: List<TheatrePreference>,
+)

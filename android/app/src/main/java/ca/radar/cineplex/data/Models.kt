@@ -67,5 +67,14 @@ data class ChatResponse(
 )
 
 @Serializable
-data class ApiError(val detail: JsonElement? = null)
+data class TheatrePreference(
+    val name: String,
+    val address: String,
+    val city: String = "Toronto",
+    val province: String = "ON",
+    val slug: String,
+    val enabled: Boolean = true,
+)
 
+@Serializable
+data class ApiError(val detail: JsonElement? = null)

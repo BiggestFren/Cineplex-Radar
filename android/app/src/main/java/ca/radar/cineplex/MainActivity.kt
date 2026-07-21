@@ -37,9 +37,12 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -70,6 +73,7 @@ import ca.radar.cineplex.data.ConnectionSettings
 import ca.radar.cineplex.data.EventItem
 import ca.radar.cineplex.data.RadarItem
 import ca.radar.cineplex.data.Suggestion
+import ca.radar.cineplex.data.TheatrePreference
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import org.unifiedpush.android.connector.UnifiedPush
@@ -134,7 +138,11 @@ fun RadarApp(initialScreen: AppScreen = AppScreen.Feed, model: RadarViewModel = 
                     AppScreen.Feed -> FeedScreen(state.events, state.suggestions, model)
                     AppScreen.Radar -> RadarScreen(state.radar, model)
                     AppScreen.Chat -> ChatScreen(state.chatReply?.reply, state.chatReply?.needsClarification == true, model)
-                    AppScreen.Settings -> SettingsScreen(state.settings, model)
+                    AppScreen.Settings -> SettingsScreen(
+                        state.settings,
+                        state.theatrePreferences,
+                        model,
+                    )
                 }
                 if (state.loading) CircularProgressIndicator(Modifier.align(Alignment.TopEnd).padding(16.dp))
             }
@@ -295,27 +303,126 @@ private fun ChatScreen(reply: String?, clarify: Boolean, model: RadarViewModel) 
 }
 
 @Composable
-private fun SettingsScreen(current: ConnectionSettings, model: RadarViewModel) {
+private fun SettingsScreen(
+    current: ConnectionSettings,
+    theatres: List<TheatrePreference>,
+    model: RadarViewModel,
+) {
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    Column(Modifier.fillMaxSize()) {
+        PrimaryTabRow(selectedTabIndex = selectedTab) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text("Connection") },
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = { Text("Theatres") },
+            )
+        }
+        when (selectedTab) {
+            0 -> ConnectionSettingsTab(current, model)
+            else -> TheatreSettingsTab(theatres, model)
+        }
+    }
+}
+
+@Composable
+private fun ConnectionSettingsTab(current: ConnectionSettings, model: RadarViewModel) {
     var backend by remember(current.backendUrl) { mutableStateOf(current.backendUrl) }
     var token by remember(current.bearerToken) { mutableStateOf(current.bearerToken) }
     var topic by remember(current.ntfyTopic) { mutableStateOf(current.ntfyTopic) }
     val context = LocalContext.current
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Connection", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        OutlinedTextField(value = backend, onValueChange = { backend = it }, label = { Text("Backend HTTPS URL") }, placeholder = { Text("https://radar.example.com") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-        OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text("Bearer token") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation())
-        OutlinedTextField(value = topic, onValueChange = { topic = it }, label = { Text("Private ntfy topic") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-        Button(onClick = { model.saveSettings(ConnectionSettings(backend, token, topic)) }, modifier = Modifier.fillMaxWidth()) { Text("Save and connect") }
-        OutlinedButton(
-            onClick = {
-                UnifiedPush.tryUseCurrentOrDefaultDistributor(context) { success ->
-                    if (success) UnifiedPush.register(context, messageForDistributor = "Radar movie alerts")
+    LazyColumn(
+        Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { Text("Connection", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+        item { OutlinedTextField(value = backend, onValueChange = { backend = it }, label = { Text("Backend HTTPS URL") }, placeholder = { Text("https://radar.example.com") }, modifier = Modifier.fillMaxWidth(), singleLine = true) }
+        item { OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text("Bearer token") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation()) }
+        item { OutlinedTextField(value = topic, onValueChange = { topic = it }, label = { Text("Private ntfy topic") }, modifier = Modifier.fillMaxWidth(), singleLine = true) }
+        item { Button(onClick = { model.saveSettings(ConnectionSettings(backend, token, topic)) }, modifier = Modifier.fillMaxWidth()) { Text("Save and connect") } }
+        item {
+            OutlinedButton(
+                onClick = {
+                    UnifiedPush.tryUseCurrentOrDefaultDistributor(context) { success ->
+                        if (success) UnifiedPush.register(context, messageForDistributor = "Radar movie alerts")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Connect ntfy / UnifiedPush") }
+        }
+        item { OutlinedButton(onClick = model::testNotification, modifier = Modifier.fillMaxWidth()) { Text("Send test notification") } }
+        item { Text("Account login and checkout remain disabled on the server until redacted authenticated Cineplex traffic is captured.", color = Color(0xFF9BA6B2)) }
+        item { Spacer(Modifier.height(24.dp)) }
+    }
+}
+
+@Composable
+private fun TheatreSettingsTab(
+    theatres: List<TheatrePreference>,
+    model: RadarViewModel,
+) {
+    var enabledNames by remember(theatres) {
+        mutableStateOf(theatres.filter { it.enabled }.map { it.name }.toSet())
+    }
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item { Spacer(Modifier.height(4.dp)) }
+        item {
+            Text("Toronto theatres", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Radar ignores disabled locations for every watch. All locations are enabled initially.",
+                color = Color(0xFF9BA6B2),
+            )
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { enabledNames = theatres.map { it.name }.toSet() }) {
+                    Text("Select all")
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("Connect ntfy / UnifiedPush") }
-        OutlinedButton(onClick = model::testNotification, modifier = Modifier.fillMaxWidth()) { Text("Send test notification") }
-        Text("Account login and checkout remain disabled on the server until redacted authenticated Cineplex traffic is captured.", color = Color(0xFF9BA6B2))
+                OutlinedButton(onClick = { enabledNames = emptySet() }) { Text("Select none") }
+            }
+        }
+        item {
+            Button(
+                onClick = { model.saveTheatrePreferences(enabledNames.toList()) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Save theatre watch list") }
+        }
+        if (theatres.isEmpty()) {
+            item { EmptyState("Theatre list unavailable", "Save the connection settings, then refresh Radar.") }
+        }
+        items(theatres, key = { it.slug }) { theatre ->
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF151A23))) {
+                Row(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(theatre.name, fontWeight = FontWeight.Bold)
+                        Text(
+                            "${theatre.address}, ${theatre.city}",
+                            color = Color(0xFF9BA6B2),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    Switch(
+                        checked = theatre.name in enabledNames,
+                        onCheckedChange = { enabled ->
+                            enabledNames = if (enabled) enabledNames + theatre.name
+                            else enabledNames - theatre.name
+                        },
+                    )
+                }
+            }
+        }
+        item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
